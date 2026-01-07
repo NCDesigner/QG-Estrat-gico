@@ -1,0 +1,8 @@
+{
+  "name": "QG Estratégico",
+  "short_name": "QG",
+  "description": "Sistema Cognitivo de Alto Nível: Diário de Guerra, Comitê de Mentores e Rastreador de Teses.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
