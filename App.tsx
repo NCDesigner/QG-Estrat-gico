@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Thread, Message, AgentId, MessageMode, Tese, Tag } from './types';
+import { Thread, Message, AgentId, MessageMode, Tag } from './types';
 import { storage } from './services/storage';
 import Sidebar from './components/Sidebar';
 import ChatArea from './components/ChatArea';

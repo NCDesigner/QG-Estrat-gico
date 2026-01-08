@@ -1,5 +1,5 @@
 
-export type AgentId = 'flavio' | 'conrado' | 'rafa' | 'council';
+export type AgentId = 'flavio' | 'conrado' | 'rafa' | 'alfredo' | 'luciano' | 'council';
 
 export enum MessageMode {
   NOTE = 'note',
@@ -47,9 +47,10 @@ export type ConfrontationLevel = 'leve' | 'direto' | 'confrontador';
 export interface Attachment {
   id: string;
   fileUrl: string;
-  fileType: string;
+  fileType: 'image' | 'video' | 'pdf' | 'audio';
   filename: string;
   base64?: string;
+  duration?: number;
 }
 
 export interface Tag {
@@ -93,21 +94,6 @@ export interface Project {
   createdAt: number;
 }
 
-export interface Tese {
-  id: string;
-  title: string;
-  context: string;
-  decision: string;
-  hypothesis: string;
-  expectedResult: string;
-  metric: string;
-  reviewDate: number;
-  status: 'active' | 'reviewed';
-  outcome?: string;
-  learnings?: string;
-  createdAt: number;
-}
-
 export interface AgentProfile {
   id: AgentId;
   name: string;
@@ -134,3 +120,6 @@ export interface TimeContext {
   timezone: string;
   dayOfWeek: string;
 }
+
+export type ExportFormat = 'txt' | 'md' | 'json';
+export type ExportScope = 'thread' | 'project' | 'contact';

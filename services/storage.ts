@@ -1,5 +1,5 @@
 
-import { Project, Thread, Message, AgentId, Tese, Tag, WarMapNode, WarMapConnection, WarMapFolder, UserProfile, AgentCustomizations } from '../types';
+import { Project, Thread, Message, AgentId, Tag, WarMapNode, WarMapConnection, WarMapFolder, UserProfile, AgentCustomizations } from '../types';
 
 const STORAGE_KEYS = {
   PROJECTS: 'conselho_projects_v7',
@@ -71,6 +71,14 @@ export const storage = {
     else tags.push(tag);
     localStorage.setItem(STORAGE_KEYS.TAGS, JSON.stringify(tags));
   },
+  updateTag: (tag: Tag) => {
+    const tags = storage.getTags();
+    const index = tags.findIndex(t => t.id === tag.id);
+    if (index >= 0) {
+      tags[index] = tag;
+      localStorage.setItem(STORAGE_KEYS.TAGS, JSON.stringify(tags));
+    }
+  },
   deleteTag: (tagId: string) => {
     const tags = storage.getTags().filter(t => t.id !== tagId);
     localStorage.setItem(STORAGE_KEYS.TAGS, JSON.stringify(tags));
@@ -96,6 +104,14 @@ export const storage = {
     if (index >= 0) folders[index] = folder;
     else folders.push(folder);
     localStorage.setItem(STORAGE_KEYS.WAR_MAP_FOLDERS, JSON.stringify(folders));
+  },
+  updateFolder: (folder: WarMapFolder) => {
+    const folders = storage.getFolders();
+    const index = folders.findIndex(f => f.id === folder.id);
+    if (index >= 0) {
+      folders[index] = folder;
+      localStorage.setItem(STORAGE_KEYS.WAR_MAP_FOLDERS, JSON.stringify(folders));
+    }
   },
   deleteFolder: (id: string) => {
     if (id === 'general') return;

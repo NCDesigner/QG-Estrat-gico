@@ -19,7 +19,7 @@ async function retryWithExponentialBackoff<T>(
       if (isQuotaError && i < maxRetries - 1) {
         console.warn(`Quota atingida. Tentando novamente em ${currentDelay}ms... (Tentativa ${i + 1}/${maxRetries})`);
         await delay(currentDelay);
-        currentDelay *= 2; // Dobra o tempo de espera
+        currentDelay *= 2; 
         continue;
       }
       throw error;
@@ -28,17 +28,33 @@ async function retryWithExponentialBackoff<T>(
   return await fn();
 }
 
+export const transcribeAudio = async (base64Audio: string, mimeType: string): Promise<string> => {
+  const model = "gemini-3-flash-preview";
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  const response = await ai.models.generateContent({
+    model,
+    contents: {
+      parts: [
+        { text: "Transcreva este áudio para texto em português do Brasil de forma natural. Retorne APENAS o texto transcrito, sem comentários adicionais." },
+        { inlineData: { mimeType, data: base64Audio } }
+      ]
+    }
+  });
+  
+  return response.text?.trim() || "";
+};
+
 export const generateAgentResponse = async (
   agentId: AgentId,
   userMessage: string,
   history: Message[],
   timeContext?: TimeContext,
   confrontationLevel: ConfrontationLevel = 'direto',
-  attachments: Attachment[] = []
+  attachments: Attachment[] = [],
+  isNewInteraction: boolean = false
 ) => {
   const agent = AGENTS[agentId];
-  // Mudando para gemini-3-flash-preview por padrão para evitar erros 429 frequentes no Pro
-  // Flash tem limites de quota muito maiores para o plano gratuito.
   const model = "gemini-3-flash-preview";
   
   const timeInfo = timeContext 
@@ -51,20 +67,20 @@ export const generateAgentResponse = async (
     confrontador: "Dureza total. Se a Nath estiver se enganando, exponha isso sem dó."
   };
 
+  const humanCheck = isNewInteraction && (agentId === 'alfredo' || agentId === 'luciano')
+    ? `Esta é uma nova conversa ou faz tempo que não se falam. Comece com uma saudação humana curta (1-2 linhas) usando "Nath", "Nata" ou "Natália" alternadamente. Ex: "E aí, Nath. Vamos organizar essa tração?" ou "Natália, qual o fundamento que estamos esquecendo aqui?".`
+    : "";
+
   const systemInstruction = `Você é ${agent.name}. Parte do Conselho Estratégico da Nath.
 MISSÃO: Dar clareza e direção imediata.
 
-DIRETRIZES DE RESPOSTA (CRÍTICO):
-1. RESPONDA EM BLOCOS PEQUENOS: Nunca mande "textões". Use parágrafos de no máximo 2-3 linhas.
-2. TOM DE CHAT: Fale como se estivesse no WhatsApp. Direto, autoritário, mas humano.
-3. ANÁLISE MULTIMODAL: Se houver imagens ou vídeos, analise-os minuciosamente dentro do seu foco (${agent.focus}).
-4. CONSELHO: Cite os outros membros do conselho se houver opiniões deles no histórico.
+REGRAS DE OURO DE FORMATAÇÃO (ESTRITAMENTE OBRIGATÓRIO):
+1. PROIBIDO: Usar '***', '---', divisores de seção ou cabeçalhos grandes (Markdown # ou ##).
+2. RESPONDA EM BLOCOS PEQUENOS: Use parágrafos de no máximo 2-3 linhas.
+3. ESTILO CHAT: Fale como no WhatsApp. Natural, sem cara de relatório formal.
+4. CLAREZA: Se a Nath estiver sendo vaga, faça 1 ou 2 perguntas curtas de clarificação antes de aprofundar.
 
-ESTRUTURA SUGERIDA:
-- Feedback imediato sobre o que foi enviado.
-- O perigo/oportunidade que ela não viu.
-- O que fazer agora (Recomendação).
-- Pergunta final de 1 linha.
+${humanCheck}
 
 Nível de Confronto: ${confrontationLevel.toUpperCase()}. ${levelInstructions[confrontationLevel]}
 ${agent.template}
@@ -81,7 +97,7 @@ ${timeInfo}`;
     if (att.base64) {
       currentMessageParts.push({
         inlineData: {
-          mimeType: att.fileType,
+          mimeType: att.fileType === 'audio' ? 'audio/webm' : (att.fileType === 'image' ? 'image/jpeg' : 'application/pdf'),
           data: att.base64.split(',')[1]
         }
       });
@@ -97,15 +113,12 @@ ${timeInfo}`;
       contents,
       config: {
         systemInstruction,
-        temperature: 0.75,
+        temperature: 0.8,
       },
     });
     return response.text;
   }).catch(error => {
     console.error(`Erro final após retentativas para ${agentId}:`, error);
-    if (error?.message?.includes('429')) {
-      return `Nath, o limite de requisições foi atingido (Erro 429). Por favor, aguarde um minuto ou selecione sua própria chave de API nas configurações da barra lateral para continuar sem limites.`;
-    }
-    return `Nath, tive um erro técnico ao processar seu conteúdo. Pode reenviar?`;
+    return `Nath, tive um erro técnico (429 ou conexão). Pode tentar de novo em alguns segundos?`;
   });
 };

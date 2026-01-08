@@ -45,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     setAgentCustoms(storage.getAgentCustoms());
   }, []);
 
-  const contacts = ['flavio', 'conrado', 'rafa', 'council'];
+  const contacts = ['flavio', 'conrado', 'rafa', 'alfredo', 'luciano', 'council'];
 
   const getRecentThreads = (contactId: string) => {
     return threads
@@ -63,9 +63,20 @@ const Sidebar: React.FC<SidebarProps> = ({
     onRefreshTags();
   };
 
-  const handleDeleteTag = (id: string, e: React.MouseEvent) => {
+  const handleRenameTag = (tag: Tag, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    if(confirm('Remover esta tag do sistema?')) {
+    const newName = prompt('Novo nome para a tag:', tag.name);
+    if (newName && newName.trim() && newName.trim() !== tag.name) {
+      storage.updateTag({ ...tag, name: newName.trim() });
+      onRefreshTags();
+    }
+  };
+
+  const handleDeleteTag = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if(confirm('Excluir esta tag?\nAs entradas marcadas não serão apagadas.')) {
       storage.deleteTag(id);
       onRefreshTags();
     }
@@ -130,7 +141,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeView === 'diario' ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 font-bold border-orange-200 border shadow-inner' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
         >
           <span className="text-lg">📓</span>
-          <span className="text-xs uppercase tracking-wider">Diário de Guerra</span>
+          <span className="text-xs uppercase tracking-wider text-left">Diário de Guerra</span>
         </button>
 
         <div>
@@ -178,11 +189,24 @@ const Sidebar: React.FC<SidebarProps> = ({
             <button onClick={() => setShowTagModal(true)} className="text-indigo-500 hover:scale-110 transition-transform"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"/></svg></button>
           </div>
           <div className="flex flex-wrap gap-2 px-2">
+            {tags.length === 0 && <p className="text-[8px] text-gray-400 uppercase font-bold px-2">Nenhuma tag criada</p>}
             {tags.map(tag => (
-              <button key={tag.id} onClick={() => onSelectTag(tag)} style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all hover:brightness-95 flex items-center gap-2 group ${activeTag?.id === tag.id && activeView === 'tags' ? 'ring-2 ring-indigo-500' : ''}`}>
-                #{tag.name}
-                <span onClick={(e) => handleDeleteTag(tag.id, e)} className="opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity w-3 h-3 flex items-center justify-center font-bold">✕</span>
-              </button>
+              <div 
+                key={tag.id} 
+                className={`flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all group ${activeTag?.id === tag.id && activeView === 'tags' ? 'ring-2 ring-indigo-500' : ''}`}
+                style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color + '40' }} 
+              >
+                <button 
+                  onClick={() => onSelectTag(tag)} 
+                  className="hover:opacity-70 transition-opacity"
+                >
+                  #{tag.name}
+                </button>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+                  <button onClick={(e) => handleRenameTag(tag, e)} className="hover:text-indigo-600 transition-colors">✎</button>
+                  <button onClick={(e) => handleDeleteTag(tag.id, e)} className="hover:text-red-600 transition-colors">✕</button>
+                </div>
+              </div>
             ))}
           </div>
         </div>
